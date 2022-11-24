@@ -1,0 +1,773 @@
+---
+title: "Prepare data for Jenn and Mathilde Manual Acoustic Analysis"
+output: html_document
+date: "2022-11-21"
+---
+
+```{r setup, echo = F}
+
+knitr::opts_chunk$set(echo = F)
+knitr::opts_chunk$set(tidy = "styler")
+ 
+
+getwd()
+
+library(data.table)
+library(tidyverse)
+library(beepr)
+library(lubridate)
+library(purrr)
+#renv::install("rstudio/renv")
+library(renv)
+library(stringr)
+```
+
+# Extract raw bat acoustic data for manual acoustic analysis for Jenn Fairchild's manual acoustic analysis
+1.a - Read id.csv files from all WAV folder directories of the bat acoustic data from the Follo Forest 2021 and 2022 field seasons 
+1.b - Combine those id.csv's into one master csv file
+2.a - Subset to only include files that correspond to AUTO.ID.s of PIPY, PIPI, PINA, NoID, NYNO (Jenn) -J1 
+2.b - Subset to only include Myotis and Plecotus species as well as BABA (Mathilde) - M1 
+3.a - Subset J1 to only include data between May 15 and 27 June for both seasons  - J2 
+3.b - Subset M1 to only include the data from 2022 (whole season) - M2
+4.a - Copy files that match J2 into the external hard disk 
+4.b - Copy files that match M2 into the Project Largefile. 
+
+## 2021 FIRST
+Step 1 - read the csv files of all bat acoustic data for both Follo Forest seasons and combine them 
+```{r}
+
+## 2021 
+knitr::opts_chunk$set(
+    # This should allow Rmarkdown to locate the data
+    root.dir = setwd(rprojroot::find_rstudio_root_file( "//largefile.nmbu.no/Project/FolloForest2021"))) 
+#also includes 2022 data)
+getwd()
+#"\\\\largefile.nmbu.no/Project/FolloForest2021" This also uncludes 2022 data (sorry that is confusing)
+
+# Specify directories
+# 2021 field season first (data structures slightly different between seasons)
+
+
+# folders where csv files are all in for each site
+inputFF1_21 <-"//largefile.nmbu.no/Project/FolloForest2021/FolloForest2021/Processed_Data/BatAcousticData/FF1" 
+
+inputFF2_21 <-"//largefile.nmbu.no/Project/FolloForest2021/FolloForest2021/Processed_Data/BatAcousticData/FF2" 
+
+inputFF3_21 <-"//largefile.nmbu.no/Project/FolloForest2021/FolloForest2021/Processed_Data/BatAcousticData/FF3" 
+
+inputFF4_21 <-"//largefile.nmbu.no/Project/FolloForest2021/FolloForest2021/Processed_Data/BatAcousticData/FF4" 
+
+inputFF5_21 <-"//largefile.nmbu.no/Project/FolloForest2021/FolloForest2021/Processed_Data/BatAcousticData/FF5" 
+
+inputFF6_21 <-"//largefile.nmbu.no/Project/FolloForest2021/FolloForest2021/Processed_Data/BatAcousticData/FF6" 
+
+inputFF7_21 <-"//largefile.nmbu.no/Project/FolloForest2021/FolloForest2021/Processed_Data/BatAcousticData/FF7" 
+
+inputFF8_21 <-"//largefile.nmbu.no/Project/FolloForest2021/FolloForest2021/Processed_Data/BatAcousticData/FF8" 
+
+inputFF9_21 <-"//largefile.nmbu.no/Project/FolloForest2021/FolloForest2021/Processed_Data/BatAcousticData/FF9" 
+
+inputFF10_21 <-"//largefile.nmbu.no/Project/FolloForest2021/FolloForest2021/Processed_Data/BatAcousticData/FF10" 
+
+inputFF11_21 <-"//largefile.nmbu.no/Project/FolloForest2021/FolloForest2021/Processed_Data/BatAcousticData/FF11"
+
+inputFF12_21 <-"//largefile.nmbu.no/Project/FolloForest2021/FolloForest2021/Processed_Data/BatAcousticData/FF12"
+
+
+output21 <-"//largefile.nmbu.no/Project/FolloForest2021/Processed_Data/Bat Acoustic Data/RSummary_2022" # where you want to save your data
+name   <-"FF21AutoClass.csv"
+
+
+
+#To set the path to your csv files
+#To grab and list all your csv files
+#my_files <- list.files(path=path, pattern="*.txt")
+
+# It can take a while to load each set of csv files so I find the beepr package helpful here... 
+
+FF1<- list.files(path=inputFF1_21, pattern="id.csv", recursive = TRUE)
+beep() 
+
+FF2<- list.files(path=inputFF2_21, pattern="id.csv", recursive = TRUE)
+beep() 
+
+FF3<- list.files(path=inputFF3_21, pattern="id.csv", recursive = TRUE)
+beep()
+
+FF4<- list.files(path=inputFF4_21, pattern="id.csv", recursive = TRUE)
+beep()
+
+FF5<- list.files(path=inputFF5_21, pattern="id.csv", recursive = TRUE)
+beep()
+
+FF6<- list.files(path=inputFF6_21, pattern="id.csv", recursive = TRUE)
+beep()
+
+FF7<- list.files(path=inputFF7_21, pattern="id.csv", recursive = TRUE)
+beep()
+
+FF8<- list.files(path=inputFF8_21, pattern="id.csv", recursive = TRUE)
+beep()
+
+FF9<- list.files(path=inputFF9_21, pattern="id.csv", recursive = TRUE)
+#beep()
+
+FF10<- list.files(path=inputFF10_21, pattern="id.csv", recursive = TRUE)
+#beep()
+
+FF11<- list.files(path=inputFF11_21, pattern="id.csv", recursive = TRUE)
+#beep()
+
+FF12<- list.files(path=inputFF12_21, pattern="id.csv", recursive = TRUE)
+#beep()
+
+getwd()
+# "\\\\largefile.nmbu.no/Project/FolloForest2021"
+FF1
+# [1] "FF1-CB/WAV_FF1-CB_06.09.2021_A/id.csv" "FF1-CB/WAV_FF1-CB_06.09.2021_B/id.csv" ...
+# Slight gap between these so I need to manually reset the root directory for every site:( )
+
+
+# #To read all your csv files and create a list with all these elements
+
+## FF01
+knitr::opts_chunk$set(
+    root.dir = setwd(rprojroot::find_rstudio_root_file( "//largefile.nmbu.no/Project/FolloForest2021/FolloForest2021/Processed_Data/BatAcousticData/FF1")))
+getwd()
+
+FF01_data <- lapply(FF1, read.csv)
+
+## FF02
+knitr::opts_chunk$set(
+    root.dir = setwd(rprojroot::find_rstudio_root_file( "//largefile.nmbu.no/Project/FolloForest2021/FolloForest2021/Processed_Data/BatAcousticData/FF2")))
+getwd()
+
+ FF02_data <- lapply(FF2, read.csv)
+
+ ## FF03 
+knitr::opts_chunk$set(
+    # This should allow Rmarkdown to locate the data
+    root.dir = setwd(rprojroot::find_rstudio_root_file( "//largefile.nmbu.no/Project/FolloForest2021/FolloForest2021/Processed_Data/BatAcousticData/FF3")))
+getwd()
+
+ FF03_data <- lapply(FF3, read.csv)
+
+ ## FF04
+knitr::opts_chunk$set(
+    # This should allow Rmarkdown to locate the data
+    root.dir = setwd(rprojroot::find_rstudio_root_file( "//largefile.nmbu.no/Project/FolloForest2021/FolloForest2021/Processed_Data/BatAcousticData/FF4")))
+getwd()
+
+ FF04_data <- lapply(FF4, read.csv)
+ 
+## FF05
+knitr::opts_chunk$set(
+    # This should allow Rmarkdown to locate the data
+    root.dir = setwd(rprojroot::find_rstudio_root_file( "//largefile.nmbu.no/Project/FolloForest2021/FolloForest2021/Processed_Data/BatAcousticData/FF5")))
+getwd()
+
+ FF05_data <- lapply(FF5, read.csv)
+ 
+## FF06
+knitr::opts_chunk$set(
+    # This should allow Rmarkdown to locate the data
+    root.dir = setwd(rprojroot::find_rstudio_root_file( "//largefile.nmbu.no/Project/FolloForest2021/FolloForest2021/Processed_Data/BatAcousticData/FF6")))
+getwd()
+
+ FF06_data <- lapply(FF6, read.csv)
+ 
+## FF07
+knitr::opts_chunk$set(
+    # This should allow Rmarkdown to locate the data
+    root.dir = setwd(rprojroot::find_rstudio_root_file( "//largefile.nmbu.no/Project/FolloForest2021/FolloForest2021/Processed_Data/BatAcousticData/FF7")))
+getwd()
+
+ FF07_data <- lapply(FF7, read.csv)
+
+ ## FF08
+knitr::opts_chunk$set(
+    # This should allow Rmarkdown to locate the data
+    root.dir = setwd(rprojroot::find_rstudio_root_file( "//largefile.nmbu.no/Project/FolloForest2021/FolloForest2021/Processed_Data/BatAcousticData/FF8")))
+getwd() 
+
+  FF08_data <- lapply(FF8, read.csv)
+
+ ## FF09
+knitr::opts_chunk$set(
+    # This should allow Rmarkdown to locate the data
+    root.dir = setwd(rprojroot::find_rstudio_root_file( "//largefile.nmbu.no/Project/FolloForest2021/FolloForest2021/Processed_Data/BatAcousticData/FF9")))
+getwd() 
+ 
+  FF09_data <- lapply(FF9, read.csv)
+
+ ## FF10
+knitr::opts_chunk$set(
+    # This should allow Rmarkdown to locate the data
+    root.dir = setwd(rprojroot::find_rstudio_root_file( "//largefile.nmbu.no/Project/FolloForest2021/FolloForest2021/Processed_Data/BatAcousticData/FF10")))
+getwd() 
+
+   FF10_data <- lapply(FF10, read.csv)
+
+  ## FF11
+knitr::opts_chunk$set(
+    # This should allow Rmarkdown to locate the data
+    root.dir = setwd(rprojroot::find_rstudio_root_file( "//largefile.nmbu.no/Project/FolloForest2021/FolloForest2021/Processed_Data/BatAcousticData/FF11")))
+getwd()   
+   
+ FF11_data <- lapply(FF11, read.csv)
+
+  ## FF12
+knitr::opts_chunk$set(
+    # This should allow Rmarkdown to locate the data
+    root.dir = setwd(rprojroot::find_rstudio_root_file( "//largefile.nmbu.no/Project/FolloForest2021/FolloForest2021/Processed_Data/BatAcousticData/FF12")))
+getwd()   
+ 
+  FF12_data <- lapply(FF12, read.csv)
+# 
+  
+#To add the name of each csv in the list
+names(FF01_data) <- gsub("//.csv$", "", FF1)
+names(FF02_data) <- gsub("//.csv$", "", FF2)
+names(FF03_data) <- gsub("//.csv$", "", FF3)
+names(FF04_data) <- gsub("//.csv$", "", FF4)
+names(FF05_data) <- gsub("//.csv$", "", FF5)
+names(FF06_data) <- gsub("//.csv$", "", FF6)
+names(FF07_data) <- gsub("//.csv$", "", FF7)
+names(FF08_data) <- gsub("//.csv$", "", FF8)
+names(FF09_data) <- gsub("//.csv$", "", FF9)
+names(FF10_data) <- gsub("//.csv$", "", FF10)
+names(FF11_data) <- gsub("//.csv$", "", FF11)
+names(FF12_data) <- gsub("//.csv$", "", FF12)
+
+
+#To create one single dataframe with all single dataframes
+big_FF01<- rbindlist(FF01_data, fill = TRUE)
+big_FF02<- rbindlist(FF02_data, fill = TRUE)
+big_FF03<- rbindlist(FF03_data, fill = TRUE)
+big_FF04<- rbindlist(FF04_data, fill = TRUE)
+big_FF05<- rbindlist(FF05_data, fill = TRUE)
+big_FF06<- rbindlist(FF06_data, fill = TRUE)
+big_FF07<- rbindlist(FF07_data, fill = TRUE)
+big_FF08<- rbindlist(FF08_data, fill = TRUE)
+big_FF09<- rbindlist(FF09_data, fill = TRUE)
+big_FF10<- rbindlist(FF10_data, fill = TRUE)
+big_FF11<- rbindlist(FF11_data, fill = TRUE)
+big_FF12<- rbindlist(FF12_data, fill = TRUE)
+
+
+alist = list(big_FF01, big_FF02, big_FF03, big_FF04, big_FF05, big_FF06, big_FF07, big_FF08, big_FF09, big_FF10, big_FF11, big_FF12)
+
+big_data <- rbindlist(alist, fill=TRUE)
+
+setwd("//largefile.nmbu.no/Project/FolloForest2021/FolloForest2021/Processed_Data/BatAcousticData/RSummary_2022")
+
+getwd()
+
+#write.csv(big_data, "2021_AutomaticallyProcessed_BatAcousticData_allsitescombined_unedited.csv")
+
+
+# Explore where the NAs are coming from... 
+
+big_data$AUTO.ID. <- as.factor(big_data$AUTO.ID.)
+summary(big_data$AUTO.ID.)
+
+# BARBAR EPTNIL EPTSER MYOALC MYOBEC MYOBRA MYODAS MYODAU MYOMYO MYOMYS MYONAT NYCLEI NYCNOC   NoID  Noise 
+#   1706  83010   3122    124    159   8535   2383  12718     64   7038    261    779   2783  54270 261602 
+# PIPNAT PIPPIP PIPPYG PLEAUR PLEAUS VESMUR   NA's 
+#   1764   2387  38252   1318   1542    123    364 
+
+big_FF04$AUTO.ID. <- as.factor(big_FF04$AUTO.ID.)
+summary(big_FF04$AUTO.ID.) # 355 NAs from this site... mostly from the CB detector is seems... perhaps there was some issues with the microphone that resolved themselves.  
+summary(big_FF04)
+## I found another 8 NAs in FF-IB from the last day before the detector was collected. Could be there was a microphone failure or the detector had some other kind of issue. In any case, not much is lost and it does not appear to be a catastrophic failure. 
+
+# In any case, it should be safe to remove these NAs. 
+levels(big_data$AUTO.ID.)
+
+big_data1 <- big_data %>% drop_na(AUTO.ID.) 
+dim(big_data1)
+# 483940     45
+# 484304-483940 = 364 - GOOD!
+
+# write.csv(big_data1, "2021_AutomaticallyProcessed_BatAcousticData_allsitescombined_dropNA.csv")
+
+# Remove the 261602 NOISE files as well. 
+
+big_data2 <- big_data1 %>% filter(AUTO.ID. != "Noise") %>%  droplevels() 
+summary(big_data2$AUTO.ID.)
+dim(big_data2)
+# 222338     45
+
+#write.csv(big_data2, "2021_AutomaticallyProcessed_BatAcousticData_allsitescombined_dropNA_dropNoise.csv")
+
+
+```
+
+# Step 2 - 2021
+## 2021 data for Mathilde 
+Mathilde probably won't use the 2021 dataset so I do not need to worry about this for now. 
+```{r}
+# # Grab all Plecotus species, Myotis species and Barbastelle observations. 
+# 
+# M1 <- big_data2 %>% filter(AUTO.ID. %in% c( "BARBAR", "MYOALC", "MYOBEC", "MYOBRA", "MYODAS", "MYODAU", "MYOMYO", "MYOMYS", "MYONAT", "PLEAUR", "PLEAUS", "NoID")) %>% droplevels
+# dim(M1) # [1] 90118    45
+# summary(M1)
+# summary(M1$AUTO.ID.)
+# # BARBAR MYOALC MYOBEC MYOBRA MYODAS MYODAU MYOMYO MYOMYS MYONAT   NoID PLEAUR PLEAUS 
+# #   1706    124    159   8535   2383  12718     64   7038    261  54270   1318   1542 
+# 
+# #write.csv(M1, "2021_AutomaticallyProcessed_BatAcousticData_allsitescombined_dropNA_dropNoise_SRE_NoID_Only.csv")
+# #M1 <- X2021_AutomaticallyProcessed_BatAcousticData_allsitescombined_dropNA_dropNoise_SRE_NoID_Only
+# 
+# ## EVENTUALLY ###
+#  
+# #Copy these files to a separate location.... 
+```
+
+# Step 3 - 2021 
+## 2021 data for Jenn 
+
+```{r}
+
+J1 <- big_data2 
+J1$date <- as.Date(J1$DATE)
+
+# Filter to only include dates from 15.05 to 27.06 (least amount of equipment failures) 
+# subset(temp, date> "2014-12-03" & date < "2014-12-05")
+J1. <- subset(J1, date > "2021-05-14" & date < "2021-06-28")
+dim(J1.) # [1] 65477    46
+summary(J1.)
+summary(J1.$AUTO.ID.)
+
+# BARBAR EPTNIL EPTSER MYOALC MYOBEC MYOBRA MYODAS MYODAU MYOMYO MYOMYS MYONAT NYCLEI NYCNOC   NoID PIPNAT 
+#    330  16919    730     44     54   3509    854   3359     23   3280    160    214   1145  20303   1455 
+# PIPPIP PIPPYG PLEAUR PLEAUS VESMUR 
+#    833  14737    168     35     57 
+
+#write.csv(J1., "2021_AutomaticallyProcessed_BatAcousticData_allsitescombined_dropNA_dropNoise_15-05_to_27_06.csv")
+# Filter to only include MRE, NoID and Noctule species 
+
+
+J2 <- J1. %>% filter(AUTO.ID. %in% c("NYCLEI", "NYCNOC", "NoID", "PIPNAT", "PIPPIP", "PIPPYG")) %>% droplevels() 
+
+dim(J2) # [1] 38687    46
+summary(J2$AUTO.ID.)
+# NYCLEI NYCNOC   NoID PIPNAT PIPPIP PIPPYG 
+#    214   1145  20303   1455    833  14737 
+
+#write.csv(J2, "2021_AutomaticallyProcessed_BatAcousticData_allsitescombined_dropNA_dropNoise_MREandNoIDandNyctalus_15-05_to_27_06.csv")
+
+J3 <- J2 %>% select(2:46)
+#write.csv(J3, "id_2021_AutomaticallyProcessed_BatAcousticData_allsitescombined_dropNA_dropNoise_MREandNoIDandNyctalus_15-05_to_27_06.csv")
+```
+
+
+# Copy the 2021 files into a new directory 
+# Starting wit Jenn's data 
+
+```{r}
+setwd("//largefile.nmbu.no/Project/FolloForest2021/FolloForest2021/Processed_Data/BatAcousticData/RSummary_2022")
+# This next command will take forever to run - do not rerun it on accident! 
+
+# Select all files with their complete file paths 
+#mass_inventory <- list.files("//largefile.nmbu.no/Project/FolloForest2021/FolloForest2021/Processed_Data/BatAcousticData/", pattern = "000.wav", recursive = TRUE, all.files = FALSE, full.names = TRUE, ignore.case = FALSE) 
+
+#write.csv(mass_inventory, "complete file path, all bat acoustic data Follo Forest2021.csv")
+
+#mass_inventory <- complete_file_path_all_bat_acoustic_data_Follo_Forest2021 <- read_csv("//largefile.nmbu.no/Project/FolloForest2021/FolloForest2021/Processed_Data/BatAcousticData/RSummary_2022/complete file path, all bat acoustic data Follo Forest2021.csv")
+
+
+mass_inventory_df <- as.data.frame(mass_inventory)
+head(mass_inventory_df) # 484313 obs 
+str(mass_inventory_df) # need to drop index column and rename mass_inventory column 
+mass_inventory_df <- mass_inventory_df %>% select(-1) %>% rename(mass_inventory = x) 
+
+mass_inventory_df$map <- mass_inventory_df$mass_inventory # make copy of the complete file paths column 
+mass_inventory_df1 <- mass_inventory_df %>% filter(!str_detect(mass_inventory, "NOISE")) # Removed noise, now 225197 obs 
+
+ 
+mass_inventory_df2 <- mass_inventory_df1 %>% mutate(map1 = str_remove(map, "//largefile.nmbu.no/Project/FolloForest2021/FolloForest2021/Processed_Data/BatAcousticData//"))  
+head(mass_inventory_df2$map1)
+
+cols <- c("Site", "Plot", "Collection", "Data", "Data1", "file.name")
+mass_inventory_df3 <- mass_inventory_df2 %>% tidyr::separate(col = map1, 
+                                                             sep = "/",
+                                                             into = cols, 
+                                                             remove = FALSE) 
+# parse out the file paths to just get the file names
+# For some directories there were two "Data" folders (Data/Data) so I will need to recreate a complete file list from the two columns... 
+summary(mass_inventory_df3)
+# create a list now of only file names. 
+filelist1 <- mass_inventory_df3 %>% select(Data1) # this column contains either "Data" or a file name
+filelist1 <- subset(filelist1, Data1 != "Data") %>% rename(file.name = Data1) # 8728 obs 
+filelist1_list <- list(filelist1)
+
+filelist2 <- mass_inventory_df3 %>% select(file.name) %>% drop_na(file.name) # 216469
+
+filelist2_list <- list(filelist2)
+
+# the last column contains either a file name or "NA" for the columns that did not have Data folders
+
+summary(filelist1)
+summary(filelist2)  
+# 216469 + 8728 = 225197 ## This is should be length of the final file list. 
+filelist3 <- full_join(filelist1, filelist2)# 225197 obs, perfect!
+#Now add this back as a column to the earlier dataset. 
+
+mass_inventory_df4 <- mass_inventory_df3
+mass_inventory_df4$filename <- filelist3$file.name 
+
+#create a column that is easy to index with J2
+J2_map <- J2 %>% select(OUT.FILE.FS) %>% rename(filename = OUT.FILE.FS)
+J2_map_list <- list(J2_map$filename) # 38687 files
+
+# subset the masss inventory to only include files that match what Jenn needs. 
+str(mass_inventory_df4)
+str(J2_map)
+JennFilePaths <- inner_join(mass_inventory_df4, J2_map, by = "filename") 
+
+
+# 38687 - 36162 = 2525 
+# 2525 files missing for some reason.... 
+# check for duplicates in the J2_map object
+test <- duplicated(J2_map)
+J2_map$filename[duplicated(J2_map$filename)] 
+summary(test) # 2524 - looks like they are all duplicate files... 
+# test to see if removing these also removes the NAs in the OUT FILE ZS issue... 
+
+# J2 has 38687 observations
+test1 <- J2 %>% distinct(OUT.FILE.FS) 
+# test1 has 36163 observations
+# 38687-36163 = 2524 
+# There were a series of input directories assosciated with these NAs:
+# FF6-OB_17.08.2021
+# FF6-CB_17.08.2021
+# FF6-IB_30.07.2021
+# FF7-OB_13.07.2021
+# FF7-IB_28.06.2021
+# FF7-CB_28.06.2021
+# FF6-OB_30.05.2021
+
+# They all DO HAVE .000.wav files there, but for some reason a proportion of them are not recorded in the id.csvs assosciated with these data recoveries... for now I will have to ignore them but may extract entire datasets from these folders later if it looks like these 2000 ish observations are not just strange duplicates. 
+
+my_files <- as.list(JennFilePaths$mass_inventory)
+my_files_list <- unlist(my_files)# 36162 files 
+head(my_files)
+View(mass_inventory)
+
+file.copy(from = my_files_list, 
+          to = "//largefile.nmbu.no/Project/FolloForest2021/FolloForest2021/Processed_Data/BatAcousticData/ForJenn")
+
+```
+
+
+# 2022 
+Combine all the bat acoustic data from 2022 
+
+```{r}
+
+## 2022
+knitr::opts_chunk$set(
+    # This should allow Rmarkdown to locate the data
+    root.dir = setwd(rprojroot::find_rstudio_root_file( "//largefile.nmbu.no/Project/FolloForest2021/FolloForest2022/Acoustics"))) 
+#also includes 2022 data)
+getwd()
+#"\\\\largefile.nmbu.no/Project/FolloForest2021" This also uncludes 2022 data (sorry that is confusing)
+
+# Specify directories
+# 2021 field season first (data structures slightly different between seasons)
+
+
+# folders where csv files are all in for each site
+inputFF01_22 <-"//largefile.nmbu.no/Project/FolloForest2021/FolloForest2022/Acoustics/FF01" 
+
+inputFF02_22 <-"//largefile.nmbu.no/Project/FolloForest2021/FolloForest2022/Acoustics/FF02"   
+
+inputFF03_22 <-"//largefile.nmbu.no/Project/FolloForest2021/FolloForest2022/Acoustics/FF03" 
+
+inputFF04_22 <-"//largefile.nmbu.no/Project/FolloForest2021/FolloForest2022/Acoustics/FF04" 
+
+inputFF05_22 <-"//largefile.nmbu.no/Project/FolloForest2021/FolloForest2022/Acoustics/FF05" 
+
+inputFF06_22 <-"//largefile.nmbu.no/Project/FolloForest2021/FolloForest2022/Acoustics/FF06" 
+
+inputFF07_22 <-"//largefile.nmbu.no/Project/FolloForest2021/FolloForest2022/Acoustics/FF07"  
+
+inputFF08_22 <-"//largefile.nmbu.no/Project/FolloForest2021/FolloForest2022/Acoustics/FF08"  
+
+inputFF09_22 <-"//largefile.nmbu.no/Project/FolloForest2021/FolloForest2022/Acoustics/FF09" 
+
+inputFF10_22 <-"//largefile.nmbu.no/Project/FolloForest2021/FolloForest2022/Acoustics/FF10" 
+
+inputFF11_22 <-"//largefile.nmbu.no/Project/FolloForest2021/FolloForest2022/Acoustics/FF11" 
+
+
+output21 <-"//largefile.nmbu.no/Project/FolloForest2021/Processed_Data/Bat Acoustic Data/RSummary_2022" # where you want to save your data
+# name   <-"FF22AutoClass.csv"
+
+
+
+#To set the path to your csv files
+#To grab and list all your csv files
+#my_files <- list.files(path=path, pattern="*.txt")
+
+# It can take a while to load each set of csv files so I find the beepr package helpful here... 
+
+FF1<- list.files(path=inputFF01_22, pattern="id.csv", recursive = TRUE)
+#beep() 
+
+FF2<- list.files(path=inputFF02_22, pattern="id.csv", recursive = TRUE)
+#beep() 
+
+FF3<- list.files(path=inputFF03_22, pattern="id.csv", recursive = TRUE)
+#beep()
+
+FF4<- list.files(path=inputFF04_22, pattern="id.csv", recursive = TRUE)
+#beep()
+
+FF5<- list.files(path=inputFF05_22, pattern="id.csv", recursive = TRUE)
+#beep()
+
+FF6<- list.files(path=inputFF06_22, pattern="id.csv", recursive = TRUE)
+#beep()
+
+FF7<- list.files(path=inputFF07_22, pattern="id.csv", recursive = TRUE)
+#beep()
+
+FF8<- list.files(path=inputFF08_22, pattern="id.csv", recursive = TRUE)
+#beep()
+
+FF9<- list.files(path=inputFF09_22, pattern="id.csv", recursive = TRUE)
+#beep()
+
+FF10<- list.files(path=inputFF10_22, pattern="id.csv", recursive = TRUE)
+#beep()
+
+FF11<- list.files(path=inputFF11_22, pattern="id.csv", recursive = TRUE)
+#beep()
+
+
+
+getwd()
+# "\\\\largefile.nmbu.no/Project/FolloForest2021"
+
+# [1] "FF1-CB/WAV_FF1-CB_06.09.2021_A/id.csv" "FF1-CB/WAV_FF1-CB_06.09.2021_B/id.csv" ...
+# Slight gap between these so I need to manually reset the root directory for every site:( )
+
+
+# #To read all your csv files and create a list with all these elements
+
+## FF01
+knitr::opts_chunk$set(
+    root.dir = setwd(rprojroot::find_rstudio_root_file( "//largefile.nmbu.no/Project/FolloForest2021/FolloForest2021/Processed_Data/BatAcousticData/FF1")))
+getwd()
+
+FF01_data <- lapply(FF1, read.csv)
+
+## FF02
+knitr::opts_chunk$set(
+    root.dir = setwd(rprojroot::find_rstudio_root_file( "//largefile.nmbu.no/Project/FolloForest2021/FolloForest2021/Processed_Data/BatAcousticData/FF2")))
+getwd()
+
+ FF02_data <- lapply(FF2, read.csv)
+
+ ## FF03 
+knitr::opts_chunk$set(
+    # This should allow Rmarkdown to locate the data
+    root.dir = setwd(rprojroot::find_rstudio_root_file( "//largefile.nmbu.no/Project/FolloForest2021/FolloForest2021/Processed_Data/BatAcousticData/FF3")))
+getwd()
+
+ FF03_data <- lapply(FF3, read.csv)
+
+ ## FF04
+knitr::opts_chunk$set(
+    # This should allow Rmarkdown to locate the data
+    root.dir = setwd(rprojroot::find_rstudio_root_file( "//largefile.nmbu.no/Project/FolloForest2021/FolloForest2021/Processed_Data/BatAcousticData/FF4")))
+getwd()
+
+ FF04_data <- lapply(FF4, read.csv)
+ 
+## FF05
+knitr::opts_chunk$set(
+    # This should allow Rmarkdown to locate the data
+    root.dir = setwd(rprojroot::find_rstudio_root_file( "//largefile.nmbu.no/Project/FolloForest2021/FolloForest2021/Processed_Data/BatAcousticData/FF5")))
+getwd()
+
+ FF05_data <- lapply(FF5, read.csv)
+ 
+## FF06
+knitr::opts_chunk$set(
+    # This should allow Rmarkdown to locate the data
+    root.dir = setwd(rprojroot::find_rstudio_root_file( "//largefile.nmbu.no/Project/FolloForest2021/FolloForest2021/Processed_Data/BatAcousticData/FF6")))
+getwd()
+
+ FF06_data <- lapply(FF6, read.csv)
+ 
+## FF07
+knitr::opts_chunk$set(
+    # This should allow Rmarkdown to locate the data
+    root.dir = setwd(rprojroot::find_rstudio_root_file( "//largefile.nmbu.no/Project/FolloForest2021/FolloForest2021/Processed_Data/BatAcousticData/FF7")))
+getwd()
+
+ FF07_data <- lapply(FF7, read.csv)
+
+ ## FF08
+knitr::opts_chunk$set(
+    # This should allow Rmarkdown to locate the data
+    root.dir = setwd(rprojroot::find_rstudio_root_file( "//largefile.nmbu.no/Project/FolloForest2021/FolloForest2021/Processed_Data/BatAcousticData/FF8")))
+getwd() 
+
+  FF08_data <- lapply(FF8, read.csv)
+
+ ## FF09
+knitr::opts_chunk$set(
+    # This should allow Rmarkdown to locate the data
+    root.dir = setwd(rprojroot::find_rstudio_root_file( "//largefile.nmbu.no/Project/FolloForest2021/FolloForest2021/Processed_Data/BatAcousticData/FF9")))
+getwd() 
+ 
+  FF09_data <- lapply(FF9, read.csv)
+
+ ## FF10
+knitr::opts_chunk$set(
+    # This should allow Rmarkdown to locate the data
+    root.dir = setwd(rprojroot::find_rstudio_root_file( "//largefile.nmbu.no/Project/FolloForest2021/FolloForest2021/Processed_Data/BatAcousticData/FF10")))
+getwd() 
+
+   FF10_data <- lapply(FF10, read.csv)
+
+  ## FF11
+knitr::opts_chunk$set(
+    # This should allow Rmarkdown to locate the data
+    root.dir = setwd(rprojroot::find_rstudio_root_file( "//largefile.nmbu.no/Project/FolloForest2021/FolloForest2021/Processed_Data/BatAcousticData/FF11")))
+getwd()   
+   
+ FF11_data <- lapply(FF11, read.csv)
+
+
+  
+#To add the name of each csv in the list
+names(FF01_data) <- gsub("//.csv$", "", FF1)
+names(FF02_data) <- gsub("//.csv$", "", FF2)
+names(FF03_data) <- gsub("//.csv$", "", FF3)
+names(FF04_data) <- gsub("//.csv$", "", FF4)
+names(FF05_data) <- gsub("//.csv$", "", FF5)
+names(FF06_data) <- gsub("//.csv$", "", FF6)
+names(FF07_data) <- gsub("//.csv$", "", FF7)
+names(FF08_data) <- gsub("//.csv$", "", FF8)
+names(FF09_data) <- gsub("//.csv$", "", FF9)
+names(FF10_data) <- gsub("//.csv$", "", FF10)
+names(FF11_data) <- gsub("//.csv$", "", FF11)
+
+
+#To create one single dataframe with all single dataframes
+big_FF01<- rbindlist(FF01_data, fill = TRUE)
+big_FF02<- rbindlist(FF02_data, fill = TRUE)
+big_FF03<- rbindlist(FF03_data, fill = TRUE)
+big_FF04<- rbindlist(FF04_data, fill = TRUE)
+big_FF05<- rbindlist(FF05_data, fill = TRUE)
+big_FF06<- rbindlist(FF06_data, fill = TRUE)
+big_FF07<- rbindlist(FF07_data, fill = TRUE)
+big_FF08<- rbindlist(FF08_data, fill = TRUE)
+big_FF09<- rbindlist(FF09_data, fill = TRUE)
+big_FF10<- rbindlist(FF10_data, fill = TRUE)
+big_FF11<- rbindlist(FF11_data, fill = TRUE)
+
+
+
+alist = list(big_FF01, big_FF02, big_FF03, big_FF04, big_FF05, big_FF06, big_FF07, big_FF08, big_FF09, big_FF10, big_FF11)
+
+big_data <- rbindlist(alist, fill=TRUE)
+
+setwd("//largefile.nmbu.no/Project/FolloForest2021/FolloForest2021/Processed_Data/BatAcousticData/RSummary_2022")
+
+getwd()
+
+#write.csv(big_data, "2021_AutomaticallyProcessed_BatAcousticData_allsitescombined_unedited.csv")
+
+
+# Explore where the NAs are coming from... 
+
+big_data$AUTO.ID. <- as.factor(big_data$AUTO.ID.)
+summary(big_data$AUTO.ID.)
+
+
+
+big_FF04$AUTO.ID. <- as.factor(big_FF04$AUTO.ID.)
+summary(big_FF04$AUTO.ID.) # 355 NAs from this site... mostly from the CB detector is seems... perhaps there was some issues with the microphone that resolved themselves.  
+summary(big_FF04)
+## I found another 8 NAs in FF-IB from the last day before the detector was collected. Could be there was a microphone failure or the detector had some other kind of issue. In any case, not much is lost and it does not appear to be a catastrophic failure. 
+
+# In any case, it should be safe to remove these NAs. 
+levels(big_data$AUTO.ID.)
+
+big_data1 <- big_data %>% drop_na(AUTO.ID.) 
+dim(big_data1)
+# 483940     45
+# 484304-483940 = 364 - GOOD!
+
+# write.csv(big_data1, "2021_AutomaticallyProcessed_BatAcousticData_allsitescombined_dropNA.csv")
+
+# Remove the 261602 NOISE files as well. 
+
+big_data2 <- big_data1 %>% filter(AUTO.ID. != "Noise") %>%  droplevels() 
+summary(big_data2$AUTO.ID.)
+dim(big_data2)
+# 222338     45
+
+#write.csv(big_data2, "2021_AutomaticallyProcessed_BatAcousticData_allsitescombined_dropNA_dropNoise.csv")
+
+
+```
+
+
+
+## copying graveyard - things that did not work 
+
+```{r, echo = F}
+#J2 <- X2021_AutomaticallyProcessed_BatAcousticData_allsitescombined_dropNA_dropNoise_MREandNoIDandNyctalus_15_05_to_27_06 #38687 obs of 47 vars 
+# Create new column with complete file directories using forward slashes 
+#  J2$file.path <- gsub(pattern = ("\\"),
+#                      replacement = "/",
+#                      x = J2$OUTDIR,
+#                      fixed = T)
+#  head(J2$file.path) 
+# # Not the complete file path unfortunately, another "FolloForest2021 folder needs to be included... 
+# 
+#   J2 <- mutate(J2, file.path1 = str_replace(file.path, "FolloForest2021", "FolloForest2021/FolloForest2021")) 
+#  head(J2$file.path1)
+# # 
+# # # Create new column with complete file path
+#   J2$full.file.path <- str_c(J2$file.path1, "/Data/", J2$OUT.FILE.FS) 
+#  head(J2$full.file.path) 
+# # 
+# # # make a slightly shorter file path that is easier to process en masse
+# # 
+#  J2 <- mutate(J2, short.file.path = str_replace(full.file.path, "//largefile.nmbu.no/Project/FolloForest2021/FolloForest2021/Processed_Data/BatAcousticData/", ""))
+#  head(J2$short.file.path)
+# 
+# # THIS can act like a file list. 
+# my_files <- list(J2$short.file.path) # can be called when the working directory is up to BatAcousticData
+# my_files1 <- list(J2$full.file.path)
+# # 
+# head(J2$full.file.path)
+# 
+# # Change working directory to make the file path name as short as possible while still being able to run the list.files function... 
+# 
+# setwd("//largefile.nmbu.no/Project/FolloForest2021/FolloForest2021/Processed_Data/BatAcousticData")
+# getwd() 
+# # //largefile.nmbu.no/Project/FolloForest2021/FolloForest2021/Processed_Data/BatAcousticData/FF1/FF1-CB/WAV_FF1-CB_06.09.2021_A/Data
+# path1 <- "/largefile.nmbu.no/Project/FolloForest2021/FolloForest2021/Processed_Data/BatAcousticData/"
+# head(J2$full.file.path)
+# # If this is the working directory, then the file path name can be
+# 
+# test.file <- "//largefile.nmbu.no/Project/FolloForest2021/FolloForest2021/Processed_Data/BatAcousticData/FF1/FF1-CB/WAV_FF1-CB_30.06.2021/Data/S4U12331_20210530_011033_000.wav"
+# 
+# file.copy(from = test.file, 
+#           to = paste0(
+# "//largefile.nmbu.no/Project/FolloForest2021/FolloForest2021/Processed_Data/BatAcousticData/ForJenn/", "S4U12331_20210530_011033_000.wav"))  
+# 
+# file.copy(from = paste0("//largefile.nmbu.no/Project/FolloForest2021/FolloForest2021/Processed_Data/BatAcousticData/", my_files), 
+#           to = paste0(
+# "//largefile.nmbu.no/Project/FolloForest2021/FolloForest2021/Processed_Data/BatAcousticData/ForJenn", my_files))
+
+```
